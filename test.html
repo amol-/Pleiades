@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pleiades Test</title>
+    <script type="text/javascript" src="pleiades.js"></script>
+    <script>
+      Pleiades.config.debug = false;
+      window.onload = function() {
+        var loop = new Pleiades.MainLoop(20);
+
+        var canvas = new Pleiades.Canvas('canvas1', false, true);
+        var bck = new Pleiades.Image(0, 0, canvas.width, canvas.height, Pleiades.Image.Load('bck.jpg'));
+        var rect1 = new Pleiades.Rectangle(5, 5, 50, 50).setFill('#880000');
+        rect1.addNode(new Pleiades.Rectangle(20, 20, 10, 10).setFill('#000088').setStroke(null));
+        var rect2 = new Pleiades.Rectangle(200, 70, 50, 50).setFill('black').setOpacity(0.3);
+        var spiral = new Pleiades.Spiral(100, 250, 90).setStroke('#CCCC0');
+        var redflash =  new Pleiades.Rectangle(0, 0, canvas.width, canvas.height).setFill('#FF0000').setOpacity(0.0);
+
+        canvas.addNode(bck);
+        canvas.addNode(rect1);
+        canvas.addNode(rect2);
+        canvas.addNode(spiral);
+        canvas.addNode(redflash);
+        loop.addCanvas(canvas);
+
+        rect1.addTrigger('switch_right', new Pleiades.Trigger({}, 
+          function(time) {
+            return (this.owner.x <= 0);
+          },
+          function(time) {
+            this.owner.data.destination = [canvas.width, null];
+            this.owner.enableTrigger('switch_left');
+        }));
+
+        rect1.addTrigger('switch_left', new Pleiades.Trigger({},
+          function(time) {
+            return ((this.owner.x + this.owner.width) >= this.owner.canvas.width);
+          },
+          function(time) {
+            this.owner.data.destination = [0, null];
+        }));
+
+        rect1.addTrigger('godown', new Pleiades.Trigger({'loop_count':0},
+          function(time) {
+            if ((this.owner.x + this.owner.width) > this.owner.canvas.width)
+              this.owner.data.loop_count += 1;
+
+            return (this.owner.data.loop_count > 2);
+          },
+          function(time) {
+            this.owner.disableTrigger('switch_right');
+            this.owner.disableTrigger('switch_left');
+            this.owner.disableTrigger('godown');
+            this.owner.data.destination = [canvas.width - this.owner.width, canvas.height - this.owner.height];
+        }));
+
+        rect1.addTrigger('back_to_start', new Pleiades.Trigger({},
+          function(time) {
+            if (((this.owner.x + this.owner.width) >= this.owner.canvas.width) &&
+                ((this.owner.y + this.owner.height) >= this.owner.canvas.height))
+              return true;
+          },
+          function(time) {
+            this.owner.disableTrigger('back_to_start');
+            this.owner.enableTrigger('switch_right');
+            this.owner.data.destination = [0, 0];
+        }));
+
+        rect1.addAction('move', Pleiades.actions.moveto.clone(25, {'speed':2, 'destination':[canvas.width, null]}));
+
+        rect2.addTrigger('hit-rect1', new Pleiades.Trigger({},
+          function(time) {
+            return this.owner.collides(rect1);
+          },
+          function(time) {
+            redflash.setOpacity(0.2);
+          },
+	  function(time) {
+	    redflash.setOpacity(0);
+	}));
+
+        rect2.addAction('scale', new Pleiades.Action(50, {'scale':1, 'delta':0.05}, function(time) {
+          this.owner.scale(this.owner.data.scale, this.owner.data.scale);
+          this.owner.data.scale += this.owner.data.delta;
+          if (this.owner.data.scale >= 2)
+            this.owner.data.delta = -0.05;
+          else if (this.owner.data.scale <= 1)
+            this.owner.data.delta = 0.05;
+        }));
+
+        spiral.addAction('rotate&flash',  new Pleiades.Action(50, {'rotation':0, 'color':0, 'delta':1}, function(time) {
+          this.owner.rotate(this.owner.data.rotation);
+          this.owner.data.rotation += 3;
+          this.owner.data.color += 10*this.owner.data.delta;
+          if (this.owner.data.color >= 255)
+            this.owner.data.delta = -1;
+          else if(this.owner.data.color <= 0)
+            this.owner.data.delta = 1;
+          this.owner.setStroke('rgb('+this.owner.data.color+','+this.owner.data.color+','+this.owner.data.color+')');
+        }));
+
+        loop.run();
+      }
+    </script>
+  </head>
+  <body>
+    <div id="canvas1" style="width:320px; height:320px;"></div>
+  </body>
+</html>
+
