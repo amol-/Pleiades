@@ -555,7 +555,7 @@ Pleiades.Rectangle = Pleiades.Klass(Pleiades.Node, {
 
 Pleiades.Spiral = Pleiades.Klass(Pleiades.Node, {
 	initialize : function(x, y, angle, name) {
-		Pleiades.Node.initialize.call(this, x, y, 0, 0, name);
+		Pleiades.Node.initialize.call(this, x-Math.cos(angle)*angle, y-Math.sin(angle)*angle, (Math.cos(angle)*angle)*2, (Math.sin(angle)*angle)*2, name);
 		if (!name)
 			this.name = 'spiral' + this.name;
 
@@ -577,7 +577,21 @@ Pleiades.Spiral = Pleiades.Klass(Pleiades.Node, {
       		}
    		a = this.angle;
     		ctx.lineTo(x+Math.cos(a)*a, y-Math.sin(a)*a);
-	}
+	},
+	getX : function() {
+		var oldx = this.x;
+		this.x += Math.cos(this.angle)*this.angle;
+		var x = this.parent != this.canvas ? this.parent.onchildx(this) : this.x;
+		this.x = oldx;
+		return x;
+	},
+	getY : function() {
+		var oldy = this.y;
+		this.y += Math.sin(this.angle)*this.angle;
+		var y = this.parent != this.canvas ? this.parent.onchildy(this) : this.y;
+		this.y = oldy;
+		return y;
+	},
 });
 
 Pleiades.Image = Pleiades.Klass(Pleiades.Node, {
@@ -610,3 +624,99 @@ Pleiades.Image.Load = function(src) {
 	img.src = src;
 	return img;
 }
+
+Pleiades.TileMap = Pleiades.Klass(Pleiades.Node, {
+	initialize : function(x, y, w, h, tilesize, name) {
+		Pleiades.Node.initialize.call(this, x, y, w*tilesize, h*tilesize, name);
+		if (!name)
+			this.name = 'tilemap' + this.name;
+
+		this.camera_x = 0;
+		this.camera_y = 0;
+		this.map_w = w;
+		this.map_h = h;
+		this.tilesize = tilesize;
+		this.tileimage = null;
+		this.tilesxrow = null;
+		this.tiles = new Array();
+	},
+	setTiles : function(image) {
+		this.tileimage = image;
+		return this;
+	},
+	setMap : function(txrow, tiles) {
+		this.tiles = tiles;
+		this.tilesxrow = txrow;
+		return this;
+	},
+	setCamera : function(x ,y) {
+		if (x < 0)
+			x = 0;
+		else if ((x/this.tilesize) > this.map_w)
+			x = this.map_w*this.tilesize;
+
+		if (y < 0)
+			y = 0;
+		else if ((y/this.tilesize) > this.map_h)
+			y = this.map_h*this.tilesize;
+
+		this.camera_x = x;
+		this.camera_y = y;
+	},
+	getCamera : function() {
+		return {'x':this.camera_x, 'y':this.camera_y};
+	},
+	ondraw : function(canvas) {
+		if ((!this.tileimage) || (!this.tileimage.complete))
+			return;
+
+		var ctx = canvas.ctx; 
+		for(var y=0; y<this.map_h+1; ++y) {
+			for(var x=0; x<this.map_w+1; ++x) {
+				var tile_id = this.tiles[(y+Math.floor(this.camera_y/this.tilesize))*(this.tilesxrow)+(x+Math.floor(this.camera_x/this.tilesize))];
+
+				if (tile_id < 0)
+					continue;
+
+				var tile_y = Math.floor((tile_id*this.tilesize)/this.tileimage.width)*this.tilesize;
+				var tile_x = Math.floor((tile_id*this.tilesize)%this.tileimage.width);
+
+				var delta_x = 0;
+				var delta_y = 0;
+				var delta_tx = 0;
+				var delta_ty = 0;
+				var delta_w = 0;
+				var delta_h = 0;
+
+				if (x == 0) {
+					delta_tx = this.camera_x % this.tilesize;
+					delta_w = delta_tx;
+				}
+				else if (x == this.map_w) {
+					delta_x = this.camera_x % this.tilesize;
+					delta_w = this.tilesize - delta_x;
+				}
+				else {
+					delta_x = this.camera_x % this.tilesize;
+				}
+
+				if (y == 0) {
+					delta_ty = this.camera_y % this.tilesize;
+					delta_h = delta_ty;
+				}
+				else if (y == this.map_w) {
+					delta_y = this.camera_y % this.tilesize;
+					delta_h = this.tilesize - delta_y;
+				}
+				else {
+					delta_y = this.camera_y % this.tilesize;
+				}
+				
+				ctx.drawImage(this.tileimage, tile_x + delta_tx, tile_y + delta_ty, this.tilesize - delta_w, this.tilesize - delta_h,
+						this.getX() + x*this.tilesize - delta_x, 
+						this.getY() + y*this.tilesize - delta_y, 
+						this.tilesize - delta_w, this.tilesize - delta_h);
+			}
+		}
+	}
+}); 

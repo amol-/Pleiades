@@ -14,11 +14,13 @@
         rect1.addNode(new Pleiades.Rectangle(20, 20, 10, 10).setFill('#000088').setStroke(null));
         var rect2 = new Pleiades.Rectangle(200, 70, 50, 50).setFill('black').setOpacity(0.3);
         var spiral = new Pleiades.Spiral(100, 250, 90).setStroke('#CCCC0');
+	var rect3 = new Pleiades.Rectangle(200, 250, 50, 50).setFill('#00FF00');
         var redflash =  new Pleiades.Rectangle(0, 0, canvas.width, canvas.height).setFill('#FF0000').setOpacity(0.0);
 
         canvas.addNode(bck);
         canvas.addNode(rect1);
         canvas.addNode(rect2);
+	canvas.addNode(rect3);
         canvas.addNode(spiral);
         canvas.addNode(redflash);
         loop.addCanvas(canvas);
@@ -99,12 +101,67 @@
           this.owner.setStroke('rgb('+this.owner.data.color+','+this.owner.data.color+','+this.owner.data.color+')');
         }));
 
+
+	rect3.addAction('rotate', new Pleiades.Action(50, {'rotation':0}, function(time) {
+	  this.owner.rotate(this.owner.data.rotation);
+	  this.owner.data.rotation += 3;
+	}));
+
+        var canvas2 = new Pleiades.Canvas('map1', false, true);
+	var map_bck = new Pleiades.Rectangle(0, 0, 320, 320).setFill('#000000');
+	var map = new Pleiades.TileMap(80, 80, 5, 5, 32).setTiles(Pleiades.Image.Load('tiles.png')).setMap(10, [0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+         											            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 													    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+													    0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+													    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+													    0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+													    1, 1, 0, 0, 12, 0, 0, 0, 0, 0,
+													    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+													    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+													    0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+	var map2 = new Pleiades.TileMap(80, 80, 5, 5, 32).setTiles(Pleiades.Image.Load('tiles.png')).setMap(10, [-1, -1, 2, -1, -1, -1, -1, -1, -1, 2,
+         											             -1, -1, -1, 18, 3, 3, 19, -1, -1, -1,
+													     2, -1, -1, 3, 3, 3, 3, -1, -1, -1,
+													     -1, -1, -1, 34, 3, 3, 35, -1, -1, -1,
+													     -1, -1, -1, -1, 34, 35, -1, -1, -1, -1,
+													     -1, -1, 2, -1, -1, -1, -1, -1, -1, -1,
+													     -1, -1, -1, -1, -1, -1, -1, -1,  2, -1,
+													     -1, -1, -1, -1, -1, -1, 2, -1, -1, -1,
+													     -1, 2, -1, -1, -1, -1, -1, -1, -1, -1,
+													     -1, -1, -1, -1, 2, -1, -1, -1, 4, 4]);
+        canvas2.addNode(map_bck);
+	canvas2.addNode(map);
+	canvas2.addNode(map2);
+        loop.addCanvas(canvas2);	
+
+	document.onkeypress = function(evt) {
+		var camera = map.getCamera();
+		switch (evt.keyCode) {
+			case 37:
+				camera.x -= 1;
+				break;
+			case 38:
+				camera.y -= 1;
+				break;
+			case 39:
+				camera.x += 1;
+				break;
+			case 40:
+				camera.y += 1;
+				break;
+		}
+		map.setCamera(camera.x, camera.y);
+		map2.setCamera(camera.x, camera.y);
+	}
+
         loop.run();
       }
     </script>
   </head>
   <body>
-    <div id="canvas1" style="width:320px; height:320px;"></div>
+    <div id="canvas1" style="width:320px; height:320px; float:left;"></div>
+    <div id="map1" style="width:320px; height:320px; float:left;"></div>
   </body>
 </html>
 
