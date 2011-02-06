@@ -135,7 +135,7 @@
         canvas2.addNode(map2);
         loop.addCanvas(canvas2);        
 
-        document.onkeypress = function(evt) {
+        document.onkeydown = document.onkeypress = function(evt) {
                 var camera = map.getCamera();
                 switch (evt.keyCode) {
                         case 37:
@@ -162,6 +162,10 @@
   <body>
     <div id="canvas1" style="width:320px; height:320px; float:left;"></div>
     <div id="map1" style="width:320px; height:320px; float:left;"></div>
+    <div style="clear:both"></div>
+    <div style="margin-left: 340px;">
+        Press arrow keys to move camera on map<br/>
+    </div>
   </body>
 </html>
 
