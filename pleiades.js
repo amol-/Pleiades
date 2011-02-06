@@ -147,6 +147,9 @@ Pleiades.Canvas = Pleiades.Klass({
                                 if (Pleiades.config.debug)
                                         console.log('clicked', child.name);
 
+                                if (child.onclick)
+                                        child.onclick(evt);
+
                                 for(var i=0; i<child.children.length; ++i) {
                                         var node = child.children[i];
                                         recursive_click_children(node, evt);

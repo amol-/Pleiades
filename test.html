@@ -107,6 +107,10 @@
           this.owner.data.rotation += 3;
         }));
 
+        rect3.onclick = function(evt) {
+            alert('thanks for clicking me!');
+        }
+
         var canvas2 = new Pleiades.Canvas('map1', false, true);
         var map_bck = new Pleiades.Rectangle(0, 0, 320, 320).setFill('#000000');
         var map = new Pleiades.TileMap(80, 80, 5, 5, 32).setTiles(Pleiades.Image.Load('tiles.png')).setMap(10, [0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
@@ -163,7 +167,10 @@
     <div id="canvas1" style="width:320px; height:320px; float:left;"></div>
     <div id="map1" style="width:320px; height:320px; float:left;"></div>
     <div style="clear:both"></div>
-    <div style="margin-left: 340px;">
+    <div style="float: left; margin-left: 30px; width: 290px;">
+        Click on the green box to test onclick
+    </div>
+    <div style="margin-left: 20px; float: left;">
         Press arrow keys to move camera on map<br/>
     </div>
   </body>
