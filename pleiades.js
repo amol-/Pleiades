@@ -722,4 +722,90 @@ Pleiades.TileMap = Pleiades.Klass(Pleiades.Node, {
                         }
                 }
         }
+});
+
+Pleiades.IsoTileMap = Pleiades.Klass(Pleiades.Node, {
+        initialize : function(x, y, w, h, tilesize, name) {
+                Pleiades.Node.initialize.call(this, x, y, w*tilesize, h*tilesize, name);
+                if (!name)
+                        this.name = 'tilemap' + this.name;
+
+                this.camera_x = 0;
+                this.camera_y = 0;
+                this.map_w = w;
+                this.map_h = h;
+                this.tilesize = tilesize;
+                this.tilehsize = tilesize/2;
+                this.tileimage = null;
+                this.tilesxrow = null;
+                this.tiles = new Array();
+        },
+        setTiles : function(image) {
+                this.tileimage = image;
+                return this;
+        },
+        setMap : function(txrow, tiles) {
+                this.tiles = tiles;
+                this.tilesxrow = txrow;
+                return this;
+        },
+        setCamera : function(x ,y) {
+                if (x < 0)
+                        x = 0;
+
+                if (y < 0)
+                        y = 0;
+                else if (y > this.tilehsize*this.map_h)
+                        y = 0
+
+                this.camera_x = x;
+                this.camera_y = y;
+        },
+        getCamera : function() {
+                return {'x':this.camera_x, 'y':this.camera_y};
+        },
+        getTileFromPixel : function(x, y) {
+                var tilex = (this.camera_x - this.camera_y) / this.tilehsize;
+                var tiley = (this.camera_x + this.camera_y) / this.tilehsize;
+                return {'x':Math.floor(tilex), 'y':Math.floor(tiley)};
+        },
+        ondraw : function(canvas) {
+                if ((!this.tileimage) || (!this.tileimage.complete))
+                        return;
+
+                var ctx = canvas.ctx;
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(this.getX(), this.getY(), 
+                         this.tilehsize*this.map_w-this.tilehsize*3, 
+                         this.tilehsize*this.map_h-this.tilehsize*3);
+                ctx.clip();
+
+                camera_tile = this.getTileFromPixel(this.camera_x, this.camera_y);
+                console.log(camera_tile);
+                for(var y=0; y<this.map_h+1; ++y) {
+                        for(var x=0; x<this.map_w+1; ++x) {
+                                var view_y = y + camera_tile.y;
+                                var view_x = x + camera_tile.x;
+                                var tile_id = this.tiles[view_y*this.tilesxrow+view_x];
+
+                                if (tile_id == undefined)
+                                        tile_id = 0;
+
+                                if (tile_id < 0)
+                                        continue;
+
+                                var tile_y = Math.floor((tile_id*this.tilesize)/this.tileimage.width)*this.tilehsize;
+                                var tile_x = Math.floor((tile_id*this.tilesize)%this.tileimage.width);
+
+                                var tile_pos_x = ((x-y)*this.tilehsize) + this.tilehsize;
+                                var tile_pos_y = ((x+y)*this.tilehsize/2) - this.tilehsize;
+                                ctx.drawImage(this.tileimage, tile_x, tile_y, this.tilesize, this.tilehsize,
+                                              this.getX() + tile_pos_x - ((this.camera_x*2 - this.camera_y*2) % this.tilesize), 
+                                              this.getY() + tile_pos_y - ((this.camera_x + this.camera_y) % this.tilehsize),
+                                              this.tilesize, this.tilehsize);
+                        }
+                }
+                ctx.restore();
+        }
 }); 
