@@ -4,6 +4,7 @@ Pleiades.config = new Object();
 Pleiades.config.enable_pixel_perfect_collision = true;
 Pleiades.config.debug = false;
 Pleiades.config.starting_id = 0;
+Pleiades.config.touchdevice = ("ontouchend" in document.documentElement) ? true : false;
 
 Pleiades.utils = new Object();
 Pleiades.utils.array_from_object = function(obj) {
@@ -88,7 +89,24 @@ Pleiades.Canvas = Pleiades.Klass({
                 this.container.appendChild(elistener);
 
                 var me = this;
-                elistener.onclick = function(evt) { me.clicked(evt); };
+                if (Pleiades.config.touchdevice) {
+                    elistener.touchX = 0;
+                    elistener.touchY = 0;
+                    elistener.ontouchstart = function(evt) {
+                        elistener.touchX = evt.touches[0].pageX;
+                        elistener.touchY = evt.touches[0].pageY;
+                    }
+                    elistener.ontouchend = function(evt) { 
+                        var adapt_evt = new Object();
+                        adapt_evt.layerX = elistener.touchX - elistener.offsetLeft;
+                        adapt_evt.layerY = elistener.touchY - elistener.offsetTop;
+                        me.clicked(adapt_evt);
+                        return false; 
+                    };
+                }
+                else {
+                    elistener.onclick = function(evt) { me.clicked(evt); };
+                }
 
                 this.canvas = document.createElement('canvas');
                 this.container.appendChild(this.canvas);
