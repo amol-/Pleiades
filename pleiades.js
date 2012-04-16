@@ -206,9 +206,11 @@ Pleiades.Canvas = Pleiades.Klass({
                         for(var i=0; i<where.length; ++i) {
                                 var node = where[i];
                                 if (node.name == nodename)
-                                        return {'idx':i, 'entry':node};
+                                    return {'idx':i, 'entry':node};
                                 else
-                                        return recursive_find_children(node.children, nodename);
+                                    var found = recursive_find_children(node.children, nodename);
+                                    if (found)
+                                        return found;
                         }
                         return null;
                 }
@@ -222,9 +224,9 @@ Pleiades.Canvas = Pleiades.Klass({
                 var node = node_data.entry;
                 var index = node_data.idx;
                 if (node.parent == this)
-                        this.scene = this.scene.splice(index, 1);
+                        this.scene.splice(index, 1);
                 else
-                        node.parent.children = node.parent.children.splice(index, 1);
+                        node.parent.children.splice(index, 1);
         }
 });
 
@@ -311,6 +313,27 @@ Pleiades.actions.moveto = new Pleiades.Action(50, {'destination': [null, null],
         this.owner.y -= speed_y;
     }
 });
+Pleiades.actions.expand = new Pleiades.Action(50, {'endsize': [null, null],
+                                                        'speed' : 1}, 
+  function(time) {
+    if (this.owner.data.endsize[0] != null) {
+        var speed_x = Math.min(Math.abs(this.owner.data.endsize[0] - this.owner.width), this.owner.data.speed);
+        if (this.owner.width < this.owner.data.endsize[0])
+          this.owner.width += speed_x;
+        else if (this.owner.width > this.owner.data.endsize[0])
+          this.owner.width -= speed_x;
+    }
+
+    if (this.owner.data.endsize[1] != null) {
+        var speed_y = Math.min(Math.abs(this.owner.data.endsize[1] - this.owner.height), this.owner.data.speed);
+        if (this.owner.height < this.owner.data.endsize[1])
+          this.owner.height += speed_y;
+        else if (this.owner.height > this.owner.data.endsize[1])
+          this.owner.height -= speed_y;
+    }
+
+});
+
 
 Pleiades.Node = Pleiades.Klass({
         initialize : function(x, y, w, h, name) {
@@ -337,10 +360,10 @@ Pleiades.Node = Pleiades.Klass({
                 delete this.actions[name];
         },
         enableAction : function(name) {
-                this.triggers[name][1] = true;
+                this.actions[name][1] = true;
         },
         disableAction : function(name) {
-                this.triggers[name][1] = false;
+                this.actions[name][1] = false;
         },
         addTrigger : function(name, t) {
                 this.triggers[name] = [t, true];
@@ -483,6 +506,9 @@ Pleiades.Node = Pleiades.Klass({
                                 canvas.ctx.translate(-center_x, -center_y);
                         }
 
+                        if (this._priv.font_style != null);
+                                canvas.ctx.font = this._priv.font_style;
+
                         if (this._priv.opacity != null)
                                 canvas.ctx.globalAlpha = this._priv.opacity;
 
@@ -536,6 +562,10 @@ Pleiades.Node = Pleiades.Klass({
         },
         setFill : function(fill_style) {
                 this._priv.fill_style = fill_style;
+                return this;
+        },
+        setFont : function(font) {
+                this._priv.font_style = font;
                 return this;
         }
 });
@@ -595,6 +625,20 @@ Pleiades.Spiral = Pleiades.Klass(Pleiades.Node, {
                 this.y = oldy;
                 return y;
         },
+});
+
+Pleiades.TextLine = Pleiades.Klass(Pleiades.Node, {
+        initialize : function(x, y, text, name) {
+            Pleiades.Node.initialize.call(this, x, y, 0, 0, name);
+            if (!name)
+                this.name = 'text' + this.name;
+
+            this.text = text;
+        },
+        ondraw : function(canvas) {
+            var ctx = canvas.ctx;
+            ctx.fillText(this.text, this.getX(), this.getY());
+        }
 });
 
 Pleiades.Image = Pleiades.Klass(Pleiades.Node, {
